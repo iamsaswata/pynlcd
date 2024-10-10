@@ -1,0 +1,327 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference &mdash; pynlcd  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Usage" href="usage.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pynlcd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pynlcd.nlcd.build_mosaic"><code class="docutils literal notranslate"><span class="pre">build_mosaic()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pynlcd.nlcd.create_point_file"><code class="docutils literal notranslate"><span class="pre">create_point_file()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pynlcd.nlcd.crop_tif_with_shapefile"><code class="docutils literal notranslate"><span class="pre">crop_tif_with_shapefile()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pynlcd.nlcd.download_worker"><code class="docutils literal notranslate"><span class="pre">download_worker()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pynlcd.nlcd.get_IMG"><code class="docutils literal notranslate"><span class="pre">get_IMG()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pynlcd.nlcd.get_land_cover"><code class="docutils literal notranslate"><span class="pre">get_land_cover()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pynlcd.nlcd.get_nlcd_value_at_point"><code class="docutils literal notranslate"><span class="pre">get_nlcd_value_at_point()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pynlcd.nlcd.get_roi_geometry"><code class="docutils literal notranslate"><span class="pre">get_roi_geometry()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pynlcd.nlcd.get_url"><code class="docutils literal notranslate"><span class="pre">get_url()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pynlcd.nlcd.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pynlcd.nlcd.split_extent"><code class="docutils literal notranslate"><span class="pre">split_extent()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pynlcd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-pynlcd.nlcd">
+<span id="api-reference"></span><h1>API Reference<a class="headerlink" href="#module-pynlcd.nlcd" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="pynlcd.nlcd.build_mosaic">
+<span class="sig-prename descclassname"><span class="pre">pynlcd.nlcd.</span></span><span class="sig-name descname"><span class="pre">build_mosaic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_IMGs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_mosaic</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynlcd/nlcd.html#build_mosaic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynlcd.nlcd.build_mosaic" title="Link to this definition"></a></dt>
+<dd><p>Build a mosaic from a list of input images.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_IMGs</strong> (<em>list</em>) – A list of input image paths to be mosaicked.</p></li>
+<li><p><strong>output_mosaic</strong> (<em>str</em>) – The output mosaic image path.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynlcd.nlcd.create_point_file">
+<span class="sig-prename descclassname"><span class="pre">pynlcd.nlcd.</span></span><span class="sig-name descname"><span class="pre">create_point_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynlcd/nlcd.html#create_point_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynlcd.nlcd.create_point_file" title="Link to this definition"></a></dt>
+<dd><p>Create a file containing the NLCD value for a specific point and year.
+This function retrieves the NLCD (National Land Cover Database) value for a given latitude and longitude
+at a specified year, writes this information to a text file, and then removes the corresponding TIFF file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_path</strong> – str
+The directory where the output text file and TIFF file are located.</p></li>
+<li><p><strong>point</strong> – tuple
+A tuple containing the latitude and longitude of the point (lat, lon).</p></li>
+<li><p><strong>year</strong> – int
+The year for which the NLCD value is to be retrieved.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynlcd.nlcd.crop_tif_with_shapefile">
+<span class="sig-prename descclassname"><span class="pre">pynlcd.nlcd.</span></span><span class="sig-name descname"><span class="pre">crop_tif_with_shapefile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shapefile_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynlcd/nlcd.html#crop_tif_with_shapefile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynlcd.nlcd.crop_tif_with_shapefile" title="Link to this definition"></a></dt>
+<dd><p>Crop the combined TIFF file using the provided shapefile.
+This function uses the provided shapefile to crop the combined TIFF file
+and saves the cropped TIFF file to the output directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_path</strong> (<em>str</em>) – The directory path where the combined and cropped TIFF files are stored.</p></li>
+<li><p><strong>shapefile_path</strong> (<em>str</em>) – The path to the shapefile used for cropping.</p></li>
+<li><p><strong>year</strong> (<em>int</em>) – The year of the NLCD data to be cropped.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynlcd.nlcd.download_worker">
+<span class="sig-prename descclassname"><span class="pre">pynlcd.nlcd.</span></span><span class="sig-name descname"><span class="pre">download_worker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynlcd/nlcd.html#download_worker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynlcd.nlcd.download_worker" title="Link to this definition"></a></dt>
+<dd><p>Download a single tile using the given WCS URL and save it to the output path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>tuple</em>) – A tuple containing the WCS URL, output image path, and spatial resolution.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple containing a boolean indicating success or failure and the output image path.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynlcd.nlcd.get_IMG">
+<span class="sig-prename descclassname"><span class="pre">pynlcd.nlcd.</span></span><span class="sig-name descname"><span class="pre">get_IMG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wcs_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatial_resolution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynlcd/nlcd.html#get_IMG"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynlcd.nlcd.get_IMG" title="Link to this definition"></a></dt>
+<dd><p>Downloads and saves an image from a Web Coverage Service (WCS) URL.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wcs_url</strong> (<em>str</em>) – The URL of the Web Coverage Service (WCS) to download the image from.</p></li>
+<li><p><strong>fname</strong> (<em>str</em>) – The output file path to save the downloaded image.</p></li>
+<li><p><strong>spatial_resolution</strong> (<em>float</em><em>, </em><em>optional</em>) – The spatial resolution of the image in degrees.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A string indicating the status of the download operation (“success” or “fail”).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynlcd.nlcd.get_land_cover">
+<span class="sig-prename descclassname"><span class="pre">pynlcd.nlcd.</span></span><span class="sig-name descname"><span class="pre">get_land_cover</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">roi_geom</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatial_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynlcd/nlcd.html#get_land_cover"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynlcd.nlcd.get_land_cover" title="Link to this definition"></a></dt>
+<dd><p>Download NLCD data for the specified year and region.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>roi_geom</strong> (<em>ogr.Geometry</em>) – An OGR geometry representing the region of interest.</p></li>
+<li><p><strong>extent</strong> (<em>tuple</em>) – A tuple containing the minimum and maximum x and y coordinates of the extent.</p></li>
+<li><p><strong>year</strong> (<em>int</em>) – The year of the NLCD data to be downloaded.</p></li>
+<li><p><strong>spatial_resolution</strong> (<em>float</em>) – The spatial resolution of the data in degrees.</p></li>
+<li><p><strong>output_path</strong> (<em>str</em>) – The directory where the downloaded data will be saved.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynlcd.nlcd.get_nlcd_value_at_point">
+<span class="sig-prename descclassname"><span class="pre">pynlcd.nlcd.</span></span><span class="sig-name descname"><span class="pre">get_nlcd_value_at_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynlcd/nlcd.html#get_nlcd_value_at_point"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynlcd.nlcd.get_nlcd_value_at_point" title="Link to this definition"></a></dt>
+<dd><p>Retrieve the NLCD (National Land Cover Database) value at a specific geographic point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_path</strong> (<em>str</em>) – The directory path where the NLCD TIFF files are stored.</p></li>
+<li><p><strong>lat</strong> (<em>float</em>) – The latitude of the point of interest.</p></li>
+<li><p><strong>lon</strong> (<em>float</em>) – The longitude of the point of interest.</p></li>
+<li><p><strong>year</strong> (<em>int</em>) – The year of the NLCD data to be used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>nlcd</strong> – The NLCD value at the specified geographic point.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynlcd.nlcd.get_roi_geometry">
+<span class="sig-prename descclassname"><span class="pre">pynlcd.nlcd.</span></span><span class="sig-name descname"><span class="pre">get_roi_geometry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynlcd/nlcd.html#get_roi_geometry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynlcd.nlcd.get_roi_geometry" title="Link to this definition"></a></dt>
+<dd><p>Get the region of interest (ROI) geometry based on the input arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>argparse.Namespace</em>) – The parsed command-line arguments.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An OGR geometry representing the region of interest.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ogr.Geometry</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynlcd.nlcd.get_url">
+<span class="sig-prename descclassname"><span class="pre">pynlcd.nlcd.</span></span><span class="sig-name descname"><span class="pre">get_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynlcd/nlcd.html#get_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynlcd.nlcd.get_url" title="Link to this definition"></a></dt>
+<dd><p>Generate the WCS URL for the specified extent and year.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>extent</strong> (<em>tuple</em>) – A tuple containing the minimum and maximum x and y coordinates of the extent.</p></li>
+<li><p><strong>year</strong> (<em>int</em>) – The year of the NLCD data to be downloaded.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The WCS URL for the specified extent and year.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynlcd.nlcd.main">
+<span class="sig-prename descclassname"><span class="pre">pynlcd.nlcd.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynlcd/nlcd.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynlcd.nlcd.main" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynlcd.nlcd.split_extent">
+<span class="sig-prename descclassname"><span class="pre">pynlcd.nlcd.</span></span><span class="sig-name descname"><span class="pre">split_extent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatial_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_geom</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynlcd/nlcd.html#split_extent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynlcd.nlcd.split_extent" title="Link to this definition"></a></dt>
+<dd><p>Split the extent into subextents of approximately 1 square degree each.
+This function divides the extent into subextents of approximately 1 square degree each,
+taking into account the spatial resolution and the overlap between tiles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>extent</strong> (<em>tuple</em>) – A tuple containing the minimum and maximum x and y coordinates of the extent.</p></li>
+<li><p><strong>spatial_resolution</strong> (<em>float</em>) – The spatial resolution of the data in degrees.</p></li>
+<li><p><strong>roi_geom</strong> (<em>ogr.Geometry</em>) – An OGR geometry representing the region of interest.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of subextents that intersect with the region of interest</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="usage.html" class="btn btn-neutral float-left" title="Usage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Saswata Nandi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

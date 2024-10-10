@@ -1,0 +1,684 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pynlcd.nlcd &mdash; pynlcd  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            pynlcd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">pynlcd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pynlcd.nlcd</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pynlcd.nlcd</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">gdal</span>
+<span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">ogr</span>
+<span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">osr</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../api.html#pynlcd.nlcd.main">[docs]</a>
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+  <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Download NLCD data for specified year and region.&#39;</span><span class="p">)</span>
+  <span class="n">group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_mutually_exclusive_group</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+  <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--shapefile&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Path to the input shapefile defining the region of interest&#39;</span><span class="p">)</span>
+  <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--point&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;LAT&#39;</span><span class="p">,</span> <span class="s1">&#39;LON&#39;</span><span class="p">),</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Point coordinates (latitude longitude)&#39;</span><span class="p">)</span>
+  <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--extent&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;MINX&#39;</span><span class="p">,</span> <span class="s1">&#39;MINY&#39;</span><span class="p">,</span> <span class="s1">&#39;MAXX&#39;</span><span class="p">,</span> <span class="s1">&#39;MAXY&#39;</span><span class="p">),</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Extent defined by minx miny maxx maxy&#39;</span><span class="p">)</span>
+
+  <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--year&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2021</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Year of NLCD data to download (default: 2021)&#39;</span><span class="p">)</span>
+  <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--cellsize&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Cell size in degrees (optional)&#39;</span><span class="p">)</span>
+  <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--output&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Output path where tiles and combined tif will be saved&#39;</span><span class="p">)</span>
+  <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+  <span class="c1"># Validate the year</span>
+  <span class="n">valid_years</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2001</span><span class="p">,</span> <span class="mi">2004</span><span class="p">,</span> <span class="mi">2006</span><span class="p">,</span> <span class="mi">2008</span><span class="p">,</span> <span class="mi">2011</span><span class="p">,</span> <span class="mi">2013</span><span class="p">,</span> <span class="mi">2016</span><span class="p">,</span> <span class="mi">2019</span><span class="p">,</span> <span class="mi">2021</span><span class="p">]</span>
+  <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">year</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_years</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error: Year </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">year</span><span class="si">}</span><span class="s2"> is not valid. Valid years are: </span><span class="si">{</span><span class="n">valid_years</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+      <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+  <span class="c1"># Get ROI geometry</span>
+  <span class="n">roi_geom</span> <span class="o">=</span> <span class="n">get_roi_geometry</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+  <span class="c1"># Get the bounding box of the ROI</span>
+  <span class="n">min_x</span><span class="p">,</span> <span class="n">max_x</span><span class="p">,</span> <span class="n">min_y</span><span class="p">,</span> <span class="n">max_y</span> <span class="o">=</span> <span class="n">roi_geom</span><span class="o">.</span><span class="n">GetEnvelope</span><span class="p">()</span>
+  <span class="n">extent</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_x</span><span class="p">,</span> <span class="n">max_x</span><span class="p">,</span> <span class="n">min_y</span><span class="p">,</span> <span class="n">max_y</span><span class="p">)</span>
+
+  <span class="c1"># Create output directory if it doesn&#39;t exist</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output</span><span class="p">):</span>
+      <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+
+  <span class="n">get_land_cover</span><span class="p">(</span><span class="n">roi_geom</span><span class="p">,</span> <span class="n">extent</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">cellsize</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+
+  <span class="c1"># Crop the TIFF using the shapefile if provided</span>
+  <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">shapefile</span><span class="p">:</span>
+    <span class="n">crop_tif_with_shapefile</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">shapefile</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">year</span><span class="p">)</span>  
+
+
+  <span class="c1"># Handle point input</span>
+  <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">point</span><span class="p">:</span>
+    <span class="n">create_point_file</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">point</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">year</span><span class="p">)</span>
+    <span class="k">return</span>    </div>
+
+
+<div class="viewcode-block" id="create_point_file">
+<a class="viewcode-back" href="../../api.html#pynlcd.nlcd.create_point_file">[docs]</a>
+<span class="k">def</span> <span class="nf">create_point_file</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">year</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a file containing the NLCD value for a specific point and year.</span>
+<span class="sd">    This function retrieves the NLCD (National Land Cover Database) value for a given latitude and longitude</span>
+<span class="sd">    at a specified year, writes this information to a text file, and then removes the corresponding TIFF file.</span>
+
+<span class="sd">    :param output_path: str</span>
+<span class="sd">        The directory where the output text file and TIFF file are located.</span>
+
+<span class="sd">    :param point: tuple</span>
+<span class="sd">        A tuple containing the latitude and longitude of the point (lat, lon).</span>
+
+<span class="sd">    :param year: int</span>
+<span class="sd">        The year for which the NLCD value is to be retrieved.</span>
+
+<span class="sd">        </span>
+<span class="sd">    :return: None</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="n">point</span>
+    <span class="n">nlcd_value</span> <span class="o">=</span> <span class="n">get_nlcd_value_at_point</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+    <span class="n">point_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;NLCD_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">lat</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">lon</span><span class="si">}</span><span class="s2">.txt&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">point_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Latitude: </span><span class="si">{</span><span class="n">lat</span><span class="si">}</span><span class="se">\n</span><span class="s2">Longitude: </span><span class="si">{</span><span class="n">lon</span><span class="si">}</span><span class="se">\n</span><span class="s2">NLCD Value: </span><span class="si">{</span><span class="n">nlcd_value</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Point coordinates and NLCD value saved to </span><span class="si">{</span><span class="n">point_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># remove the tif file</span>
+    <span class="n">tif_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;NLCD_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">_Land_Cover.tif&quot;</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">tif_file</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_nlcd_value_at_point">
+<a class="viewcode-back" href="../../api.html#pynlcd.nlcd.get_nlcd_value_at_point">[docs]</a>
+<span class="k">def</span> <span class="nf">get_nlcd_value_at_point</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">year</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieve the NLCD (National Land Cover Database) value at a specific geographic point.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    output_path : str</span>
+<span class="sd">        The directory path where the NLCD TIFF files are stored.</span>
+<span class="sd">    lat : float</span>
+<span class="sd">        The latitude of the point of interest.</span>
+<span class="sd">    lon : float</span>
+<span class="sd">        The longitude of the point of interest.</span>
+<span class="sd">    year : int</span>
+<span class="sd">        The year of the NLCD data to be used.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    nlcd : int</span>
+<span class="sd">        The NLCD value at the specified geographic point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># Path to the combined TIFF file</span>
+    <span class="n">combined_tif</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;NLCD_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">_Land_Cover.tif&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Open the TIFF file</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span><span class="n">combined_tif</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">dataset</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error: Unable to open </span><span class="si">{</span><span class="n">combined_tif</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Get the geotransform and inverse geotransform</span>
+    <span class="n">transform</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">GetGeoTransform</span><span class="p">()</span>
+    <span class="n">inv_transform</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">InvGeoTransform</span><span class="p">(</span><span class="n">transform</span><span class="p">)</span>
+
+    <span class="c1"># Convert lat/lon to pixel coordinates</span>
+    <span class="n">px</span><span class="p">,</span> <span class="n">py</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">ApplyGeoTransform</span><span class="p">(</span><span class="n">inv_transform</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">)</span>
+
+    <span class="c1"># Read the pixel value</span>
+    <span class="n">band</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">nlcd_value</span> <span class="o">=</span> <span class="n">band</span><span class="o">.</span><span class="n">ReadAsArray</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">px</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">py</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">nlcd_value</span></div>
+
+
+
+
+<div class="viewcode-block" id="crop_tif_with_shapefile">
+<a class="viewcode-back" href="../../api.html#pynlcd.nlcd.crop_tif_with_shapefile">[docs]</a>
+<span class="k">def</span> <span class="nf">crop_tif_with_shapefile</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">shapefile_path</span><span class="p">,</span> <span class="n">year</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Crop the combined TIFF file using the provided shapefile.</span>
+<span class="sd">    This function uses the provided shapefile to crop the combined TIFF file</span>
+<span class="sd">    and saves the cropped TIFF file to the output directory.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    output_path : str</span>
+<span class="sd">        The directory path where the combined and cropped TIFF files are stored.</span>
+<span class="sd">    shapefile_path : str</span>
+<span class="sd">        The path to the shapefile used for cropping.</span>
+<span class="sd">    year : int</span>
+<span class="sd">        The year of the NLCD data to be cropped.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Path to the combined TIFF file</span>
+    <span class="n">combined_tif</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;NLCD_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">_Land_Cover.tif&quot;</span><span class="p">)</span>
+    <span class="c1"># Path to the cropped TIFF file</span>
+    <span class="n">cropped_tif</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;NLCD_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">_Land_Cover_final.tif&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Use gdal.Warp to crop the TIFF using the shapefile</span>
+    <span class="n">gdal</span><span class="o">.</span><span class="n">Warp</span><span class="p">(</span><span class="n">cropped_tif</span><span class="p">,</span> <span class="n">combined_tif</span><span class="p">,</span> <span class="n">cutlineDSName</span><span class="o">=</span><span class="n">shapefile_path</span><span class="p">,</span> <span class="n">cropToCutline</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Remove the combined TIFF file</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">combined_tif</span><span class="p">)</span>
+
+    <span class="c1"># Rename the cropped TIFF file to the final name</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">cropped_tif</span><span class="p">,</span> <span class="n">combined_tif</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cropped TIFF saved to </span><span class="si">{</span><span class="n">cropped_tif</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>    </div>
+
+
+
+<div class="viewcode-block" id="get_land_cover">
+<a class="viewcode-back" href="../../api.html#pynlcd.nlcd.get_land_cover">[docs]</a>
+<span class="k">def</span> <span class="nf">get_land_cover</span><span class="p">(</span><span class="n">roi_geom</span><span class="p">,</span> <span class="n">extent</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">spatial_resolution</span><span class="p">,</span> <span class="n">output_path</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Download NLCD data for the specified year and region.</span>
+
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+<span class="sd">  roi_geom : ogr.Geometry</span>
+<span class="sd">    An OGR geometry representing the region of interest.</span>
+
+<span class="sd">  extent : tuple</span>
+<span class="sd">    A tuple containing the minimum and maximum x and y coordinates of the extent.</span>
+
+<span class="sd">  year : int</span>
+<span class="sd">    The year of the NLCD data to be downloaded.</span>
+
+<span class="sd">  spatial_resolution : float</span>
+<span class="sd">    The spatial resolution of the data in degrees.</span>
+
+<span class="sd">  output_path : str</span>
+<span class="sd">    The directory where the downloaded data will be saved.</span>
+
+<span class="sd">  Returns</span>
+<span class="sd">  -------</span>
+<span class="sd">  None</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  
+  <span class="n">min_x</span><span class="p">,</span> <span class="n">max_x</span><span class="p">,</span> <span class="n">min_y</span><span class="p">,</span> <span class="n">max_y</span> <span class="o">=</span> <span class="n">extent</span>
+  <span class="n">span_x</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">max_x</span> <span class="o">-</span> <span class="n">min_x</span><span class="p">)</span>
+  <span class="n">span_y</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">max_y</span> <span class="o">-</span> <span class="n">min_y</span><span class="p">)</span>
+  <span class="n">area</span> <span class="o">=</span> <span class="n">span_x</span> <span class="o">*</span> <span class="n">span_y</span>
+
+  <span class="c1"># Decide whether to download in tiles or as a whole</span>
+  <span class="k">if</span> <span class="n">area</span> <span class="o">&lt;=</span> <span class="mi">9</span><span class="p">:</span>  <span class="c1"># 9 square degrees</span>
+      <span class="c1"># Just get the whole image</span>
+      <span class="n">out_img</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;NLCD_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">_Land_Cover.tif&quot;</span><span class="p">)</span>
+      <span class="n">wcs_url</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="n">extent</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Getting the image...&quot;</span><span class="p">)</span>
+      <span class="n">result</span> <span class="o">=</span> <span class="n">get_IMG</span><span class="p">(</span><span class="n">wcs_url</span><span class="p">,</span> <span class="n">out_img</span><span class="p">,</span> <span class="n">spatial_resolution</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+      <span class="c1"># Split extent into tiles of ~1 sq deg</span>
+      <span class="n">tile_extents</span> <span class="o">=</span> <span class="n">split_extent</span><span class="p">(</span><span class="n">extent</span><span class="p">,</span> <span class="n">spatial_resolution</span><span class="p">,</span> <span class="n">roi_geom</span><span class="p">)</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">tile_extents</span><span class="p">:</span>
+          <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No tiles intersect with the ROI.&quot;</span><span class="p">)</span>
+          <span class="k">return</span>
+      <span class="n">failed_tiles</span> <span class="o">=</span> <span class="p">[]</span>
+      <span class="n">tile_paths</span> <span class="o">=</span> <span class="p">[]</span>
+
+      <span class="c1"># Use multiprocessing Pool for parallel downloads</span>
+      <span class="n">num_processes</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tile_extents</span><span class="p">),</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">())</span>
+      <span class="n">pool</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">processes</span><span class="o">=</span><span class="n">num_processes</span><span class="p">)</span>
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloading </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tile_extents</span><span class="p">)</span><span class="si">}</span><span class="s2"> tiles using </span><span class="si">{</span><span class="n">num_processes</span><span class="si">}</span><span class="s2"> processes...&quot;</span><span class="p">)</span>
+
+      <span class="c1"># Prepare arguments for parallel processing</span>
+      <span class="n">download_args</span> <span class="o">=</span> <span class="p">[]</span>
+      <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">tile_ext</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tile_extents</span><span class="p">):</span>
+          <span class="n">out_tile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;tile_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">.tif&quot;</span><span class="p">)</span>
+          <span class="n">wcs_url</span> <span class="o">=</span> <span class="n">get_url</span><span class="p">(</span><span class="n">tile_ext</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+          <span class="n">download_args</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">wcs_url</span><span class="p">,</span> <span class="n">out_tile</span><span class="p">,</span> <span class="n">spatial_resolution</span><span class="p">))</span>
+
+      <span class="c1"># Download tiles in parallel</span>
+      <span class="n">results</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">download_worker</span><span class="p">,</span> <span class="n">download_args</span><span class="p">)</span>
+      <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+      <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+      <span class="c1"># Collect successful tile paths</span>
+      <span class="k">for</span> <span class="n">success</span><span class="p">,</span> <span class="n">out_tile</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+          <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+              <span class="n">tile_paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">out_tile</span><span class="p">)</span>
+          <span class="k">else</span><span class="p">:</span>
+              <span class="n">failed_tiles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">out_tile</span><span class="p">)</span>
+
+      <span class="k">if</span> <span class="n">failed_tiles</span><span class="p">:</span>
+          <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Retrying failed tiles...&quot;</span><span class="p">)</span>
+          <span class="c1"># Retry failed downloads</span>
+          <span class="n">pool</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">processes</span><span class="o">=</span><span class="n">num_processes</span><span class="p">)</span>
+          <span class="n">retry_args</span> <span class="o">=</span> <span class="p">[(</span><span class="n">get_url</span><span class="p">(</span><span class="n">tile_extents</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">year</span><span class="p">),</span> <span class="n">failed_tiles</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">spatial_resolution</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">failed_tiles</span><span class="p">))]</span>
+          <span class="n">retry_results</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">download_worker</span><span class="p">,</span> <span class="n">retry_args</span><span class="p">)</span>
+          <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+          <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+          <span class="k">for</span> <span class="n">success</span><span class="p">,</span> <span class="n">out_tile</span> <span class="ow">in</span> <span class="n">retry_results</span><span class="p">:</span>
+              <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+                  <span class="n">tile_paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">out_tile</span><span class="p">)</span>
+              <span class="k">else</span><span class="p">:</span>
+                  <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to download tile: </span><span class="si">{</span><span class="n">out_tile</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+      <span class="c1"># Mosaic tiles together</span>
+      <span class="k">if</span> <span class="n">tile_paths</span><span class="p">:</span>
+          <span class="n">output_mosaic</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;NLCD_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">_Land_Cover.tif&quot;</span><span class="p">)</span>
+          <span class="n">build_mosaic</span><span class="p">(</span><span class="n">tile_paths</span><span class="p">,</span> <span class="n">output_mosaic</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+          <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No tiles were successfully downloaded.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="download_worker">
+<a class="viewcode-back" href="../../api.html#pynlcd.nlcd.download_worker">[docs]</a>
+<span class="k">def</span> <span class="nf">download_worker</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Download a single tile using the given WCS URL and save it to the output path.</span>
+
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+<span class="sd">  args : tuple</span>
+<span class="sd">    A tuple containing the WCS URL, output image path, and spatial resolution.</span>
+
+<span class="sd">  Returns</span>
+<span class="sd">  -------</span>
+<span class="sd">  tuple</span>
+<span class="sd">    A tuple containing a boolean indicating success or failure and the output image path.</span>
+
+<span class="sd"> &quot;&quot;&quot;</span>
+  
+  <span class="n">wcs_url</span><span class="p">,</span> <span class="n">out_img</span><span class="p">,</span> <span class="n">spatial_resolution</span> <span class="o">=</span> <span class="n">args</span>
+  <span class="n">result</span> <span class="o">=</span> <span class="n">get_IMG</span><span class="p">(</span><span class="n">wcs_url</span><span class="p">,</span> <span class="n">out_img</span><span class="p">,</span> <span class="n">spatial_resolution</span><span class="p">)</span>
+  <span class="k">return</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="n">out_img</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="split_extent">
+<a class="viewcode-back" href="../../api.html#pynlcd.nlcd.split_extent">[docs]</a>
+<span class="k">def</span> <span class="nf">split_extent</span><span class="p">(</span><span class="n">extent</span><span class="p">,</span> <span class="n">spatial_resolution</span><span class="p">,</span> <span class="n">roi_geom</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  </span>
+<span class="sd">  Split the extent into subextents of approximately 1 square degree each.</span>
+<span class="sd">  This function divides the extent into subextents of approximately 1 square degree each,</span>
+<span class="sd">  taking into account the spatial resolution and the overlap between tiles.</span>
+
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+<span class="sd">  extent : tuple</span>
+<span class="sd">    A tuple containing the minimum and maximum x and y coordinates of the extent.</span>
+
+<span class="sd">  spatial_resolution : float</span>
+<span class="sd">    The spatial resolution of the data in degrees.</span>
+
+<span class="sd">  roi_geom : ogr.Geometry</span>
+<span class="sd">    An OGR geometry representing the region of interest.</span>
+
+<span class="sd">  Returns</span>
+<span class="sd">  -------</span>
+<span class="sd">  list</span>
+<span class="sd">    A list of subextents that intersect with the region of interest</span>
+
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="c1"># Size of each subextent (approximately 1 square degree)</span>
+  <span class="n">min_x</span><span class="p">,</span> <span class="n">max_x</span><span class="p">,</span> <span class="n">min_y</span><span class="p">,</span> <span class="n">max_y</span> <span class="o">=</span> <span class="n">extent</span>
+  <span class="n">subextent_size</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># in degrees</span>
+  <span class="c1"># Add some tile overlap to prevent possible gaps</span>
+  <span class="k">if</span> <span class="n">spatial_resolution</span><span class="p">:</span>
+      <span class="n">tile_margin</span> <span class="o">=</span> <span class="n">spatial_resolution</span>
+  <span class="k">else</span><span class="p">:</span>
+      <span class="n">tile_margin</span> <span class="o">=</span> <span class="mf">0.0006</span>  <span class="c1"># 0.0006 degrees = 60 meters</span>
+
+  <span class="n">subextents</span> <span class="o">=</span> <span class="p">[]</span>
+
+  <span class="c1"># Calculate the number of rows and columns</span>
+  <span class="n">num_rows</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="n">max_y</span> <span class="o">-</span> <span class="n">min_y</span><span class="p">)</span> <span class="o">/</span> <span class="n">subextent_size</span><span class="p">)</span>
+  <span class="n">num_cols</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="n">max_x</span> <span class="o">-</span> <span class="n">min_x</span><span class="p">)</span> <span class="o">/</span> <span class="n">subextent_size</span><span class="p">)</span>
+
+  <span class="n">step_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">max_x</span> <span class="o">-</span> <span class="n">min_x</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_cols</span>
+  <span class="n">step_y</span> <span class="o">=</span> <span class="p">(</span><span class="n">max_y</span> <span class="o">-</span> <span class="n">min_y</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_rows</span>
+
+  <span class="c1"># Create spatial reference for 4326</span>
+  <span class="n">srs</span> <span class="o">=</span> <span class="n">osr</span><span class="o">.</span><span class="n">SpatialReference</span><span class="p">()</span>
+  <span class="n">srs</span><span class="o">.</span><span class="n">ImportFromEPSG</span><span class="p">(</span><span class="mi">4326</span><span class="p">)</span>
+
+  <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_rows</span><span class="p">):</span>
+      <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_cols</span><span class="p">):</span>
+          <span class="c1"># Calculate the bounds of the subextent</span>
+          <span class="n">subextent_min_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_x</span> <span class="o">+</span> <span class="n">col</span> <span class="o">*</span> <span class="n">step_x</span><span class="p">)</span> <span class="o">-</span> <span class="n">tile_margin</span>
+          <span class="n">subextent_max_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_x</span> <span class="o">+</span> <span class="p">(</span><span class="n">col</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">step_x</span><span class="p">)</span> <span class="o">+</span> <span class="n">tile_margin</span>
+          <span class="n">subextent_min_y</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_y</span> <span class="o">+</span> <span class="n">row</span> <span class="o">*</span> <span class="n">step_y</span><span class="p">)</span> <span class="o">-</span> <span class="n">tile_margin</span>
+          <span class="n">subextent_max_y</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_y</span> <span class="o">+</span> <span class="p">(</span><span class="n">row</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">step_y</span><span class="p">)</span> <span class="o">+</span> <span class="n">tile_margin</span>
+
+          <span class="c1"># Create tile geometry</span>
+          <span class="n">ring</span> <span class="o">=</span> <span class="n">ogr</span><span class="o">.</span><span class="n">Geometry</span><span class="p">(</span><span class="n">ogr</span><span class="o">.</span><span class="n">wkbLinearRing</span><span class="p">)</span>
+          <span class="n">ring</span><span class="o">.</span><span class="n">AddPoint</span><span class="p">(</span><span class="n">subextent_min_x</span><span class="p">,</span> <span class="n">subextent_min_y</span><span class="p">)</span>
+          <span class="n">ring</span><span class="o">.</span><span class="n">AddPoint</span><span class="p">(</span><span class="n">subextent_min_x</span><span class="p">,</span> <span class="n">subextent_max_y</span><span class="p">)</span>
+          <span class="n">ring</span><span class="o">.</span><span class="n">AddPoint</span><span class="p">(</span><span class="n">subextent_max_x</span><span class="p">,</span> <span class="n">subextent_max_y</span><span class="p">)</span>
+          <span class="n">ring</span><span class="o">.</span><span class="n">AddPoint</span><span class="p">(</span><span class="n">subextent_max_x</span><span class="p">,</span> <span class="n">subextent_min_y</span><span class="p">)</span>
+          <span class="n">ring</span><span class="o">.</span><span class="n">AddPoint</span><span class="p">(</span><span class="n">subextent_min_x</span><span class="p">,</span> <span class="n">subextent_min_y</span><span class="p">)</span>
+          <span class="n">tile_geom</span> <span class="o">=</span> <span class="n">ogr</span><span class="o">.</span><span class="n">Geometry</span><span class="p">(</span><span class="n">ogr</span><span class="o">.</span><span class="n">wkbPolygon</span><span class="p">)</span>
+          <span class="n">tile_geom</span><span class="o">.</span><span class="n">AddGeometry</span><span class="p">(</span><span class="n">ring</span><span class="p">)</span>
+
+          <span class="c1"># Check if tile intersects ROI</span>
+          <span class="k">if</span> <span class="n">tile_geom</span><span class="o">.</span><span class="n">Intersects</span><span class="p">(</span><span class="n">roi_geom</span><span class="p">):</span>
+              <span class="n">subextents</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">subextent_min_x</span><span class="p">,</span> <span class="n">subextent_max_x</span><span class="p">,</span> <span class="n">subextent_min_y</span><span class="p">,</span> <span class="n">subextent_max_y</span><span class="p">))</span>
+
+  <span class="k">return</span> <span class="n">subextents</span></div>
+
+
+
+<div class="viewcode-block" id="get_IMG">
+<a class="viewcode-back" href="../../api.html#pynlcd.nlcd.get_IMG">[docs]</a>
+<span class="k">def</span> <span class="nf">get_IMG</span><span class="p">(</span><span class="n">wcs_url</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">spatial_resolution</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">  Downloads and saves an image from a Web Coverage Service (WCS) URL.</span>
+
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+
+<span class="sd">  wcs_url : str</span>
+<span class="sd">    The URL of the Web Coverage Service (WCS) to download the image from.</span>
+
+<span class="sd">  fname : str</span>
+<span class="sd">    The output file path to save the downloaded image.</span>
+
+<span class="sd">  spatial_resolution : float, optional</span>
+<span class="sd">    The spatial resolution of the image in degrees.</span>
+
+<span class="sd">  Returns</span>
+<span class="sd">  -------</span>
+<span class="sd">  str</span>
+<span class="sd">    A string indicating the status of the download operation (&quot;success&quot; or &quot;fail&quot;).</span>
+<span class="sd">      </span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  
+  <span class="n">ds</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span><span class="n">wcs_url</span><span class="p">)</span>
+  <span class="c1"># Check if the dataset is successfully opened</span>
+  <span class="k">if</span> <span class="n">ds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to open WCS dataset from </span><span class="si">{</span><span class="n">wcs_url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+      <span class="k">return</span> <span class="s2">&quot;fail&quot;</span>
+  <span class="k">else</span><span class="p">:</span>
+      <span class="n">output_format</span> <span class="o">=</span> <span class="s2">&quot;GTiff&quot;</span>
+      <span class="c1"># Create output dataset</span>
+      <span class="n">image_driver</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GetDriverByName</span><span class="p">(</span><span class="n">output_format</span><span class="p">)</span>
+
+      <span class="k">if</span> <span class="n">spatial_resolution</span><span class="p">:</span>
+          <span class="c1"># Use specified spatial resolution if provided</span>
+          <span class="n">output_ds</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Warp</span><span class="p">(</span>
+              <span class="n">fname</span><span class="p">,</span>
+              <span class="n">ds</span><span class="p">,</span>
+              <span class="n">xRes</span><span class="o">=</span><span class="n">spatial_resolution</span><span class="p">,</span>
+              <span class="n">yRes</span><span class="o">=</span><span class="n">spatial_resolution</span><span class="p">,</span>
+              <span class="n">resampleAlg</span><span class="o">=</span><span class="s2">&quot;near&quot;</span><span class="p">,</span>
+              <span class="nb">format</span><span class="o">=</span><span class="n">output_format</span>
+          <span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+          <span class="c1"># Use default spatial resolution</span>
+          <span class="n">output_ds</span> <span class="o">=</span> <span class="n">image_driver</span><span class="o">.</span><span class="n">CreateCopy</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">ds</span><span class="p">)</span>
+
+      <span class="c1"># Close datasets</span>
+      <span class="n">ds</span> <span class="o">=</span> <span class="kc">None</span>
+      <span class="n">output_ds</span> <span class="o">=</span> <span class="kc">None</span>
+
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Image saved to </span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+      <span class="k">return</span> <span class="s2">&quot;success&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="build_mosaic">
+<a class="viewcode-back" href="../../api.html#pynlcd.nlcd.build_mosaic">[docs]</a>
+<span class="k">def</span> <span class="nf">build_mosaic</span><span class="p">(</span><span class="n">input_IMGs</span><span class="p">,</span> <span class="n">output_mosaic</span><span class="p">):</span>
+<span class="w">  </span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Build a mosaic from a list of input images.</span>
+
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+
+<span class="sd">  input_IMGs : list</span>
+<span class="sd">    A list of input image paths to be mosaicked.</span>
+
+<span class="sd">  output_mosaic : str</span>
+<span class="sd">    The output mosaic image path.</span>
+<span class="sd">      </span>
+<span class="sd">  Returns</span>
+<span class="sd">  -------</span>
+<span class="sd">  None</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_IMGs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+      <span class="c1"># Only one tile, just copy it</span>
+      <span class="n">gdal</span><span class="o">.</span><span class="n">Translate</span><span class="p">(</span><span class="n">output_mosaic</span><span class="p">,</span> <span class="n">input_IMGs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mosaic created: </span><span class="si">{</span><span class="n">output_mosaic</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+      <span class="k">return</span>
+
+  <span class="c1"># Warp options - set the format to GeoTIFF and compression</span>
+  <span class="n">warp_options</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">WarpOptions</span><span class="p">(</span>
+      <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;GTiff&quot;</span><span class="p">,</span>
+      <span class="n">srcNodata</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+      <span class="n">dstNodata</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+      <span class="n">resampleAlg</span><span class="o">=</span><span class="s2">&quot;near&quot;</span><span class="p">,</span>
+      <span class="n">creationOptions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;COMPRESS=LZW&quot;</span><span class="p">]</span>
+  <span class="p">)</span>
+
+  <span class="c1"># Mosaic the input files</span>
+  <span class="n">gdal</span><span class="o">.</span><span class="n">Warp</span><span class="p">(</span><span class="n">output_mosaic</span><span class="p">,</span> <span class="n">input_IMGs</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">warp_options</span><span class="p">)</span>
+  <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mosaic created: </span><span class="si">{</span><span class="n">output_mosaic</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_url">
+<a class="viewcode-back" href="../../api.html#pynlcd.nlcd.get_url">[docs]</a>
+<span class="k">def</span> <span class="nf">get_url</span><span class="p">(</span><span class="n">extent</span><span class="p">,</span> <span class="n">year</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Generate the WCS URL for the specified extent and year.</span>
+
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+<span class="sd">  extent : tuple</span>
+<span class="sd">    A tuple containing the minimum and maximum x and y coordinates of the extent.</span>
+
+<span class="sd">  year : int</span>
+<span class="sd">    The year of the NLCD data to be downloaded.</span>
+
+<span class="sd">  Returns</span>
+<span class="sd">  -------</span>
+<span class="sd">  str</span>
+<span class="sd">    The WCS URL for the specified extent and year.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  
+  <span class="n">min_x</span><span class="p">,</span> <span class="n">max_x</span><span class="p">,</span> <span class="n">min_y</span><span class="p">,</span> <span class="n">max_y</span> <span class="o">=</span> <span class="n">extent</span>
+  <span class="n">coverage_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;NLCD_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">_Land_Cover_L48&quot;</span>
+  <span class="n">url</span> <span class="o">=</span> <span class="p">(</span>
+      <span class="sa">f</span><span class="s2">&quot;https://www.mrlc.gov/geoserver/mrlc_display/</span><span class="si">{</span><span class="n">coverage_id</span><span class="si">}</span><span class="s2">/wcs?&quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;service=WCS&amp;version=2.0.1&amp;request=getcoverage&amp;coverageid=</span><span class="si">{</span><span class="n">coverage_id</span><span class="si">}</span><span class="s2">&quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;&amp;subset=Lat(</span><span class="si">{</span><span class="n">min_y</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">max_y</span><span class="si">}</span><span class="s2">)&amp;subset=Long(</span><span class="si">{</span><span class="n">min_x</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">max_x</span><span class="si">}</span><span class="s2">)&quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;&amp;SubsettingCRS=http://www.opengis.net/def/crs/EPSG/0/4326&quot;</span>
+  <span class="p">)</span>
+  <span class="k">return</span> <span class="n">url</span></div>
+
+
+
+<div class="viewcode-block" id="get_roi_geometry">
+<a class="viewcode-back" href="../../api.html#pynlcd.nlcd.get_roi_geometry">[docs]</a>
+<span class="k">def</span> <span class="nf">get_roi_geometry</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Get the region of interest (ROI) geometry based on the input arguments.</span>
+
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+<span class="sd">  args : argparse.Namespace</span>
+<span class="sd">    The parsed command-line arguments.</span>
+
+<span class="sd">  Returns</span>
+<span class="sd">  -------</span>
+<span class="sd">  ogr.Geometry</span>
+<span class="sd">    An OGR geometry representing the region of interest.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="n">target_srs</span> <span class="o">=</span> <span class="n">osr</span><span class="o">.</span><span class="n">SpatialReference</span><span class="p">()</span>
+  <span class="n">target_srs</span><span class="o">.</span><span class="n">ImportFromEPSG</span><span class="p">(</span><span class="mi">4326</span><span class="p">)</span>
+  <span class="n">target_srs</span><span class="o">.</span><span class="n">SetAxisMappingStrategy</span><span class="p">(</span><span class="n">osr</span><span class="o">.</span><span class="n">OAMS_TRADITIONAL_GIS_ORDER</span><span class="p">)</span>
+
+  <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">shapefile</span><span class="p">:</span>
+      <span class="c1"># Open the shapefile</span>
+      <span class="n">shp_driver</span> <span class="o">=</span> <span class="n">ogr</span><span class="o">.</span><span class="n">GetDriverByName</span><span class="p">(</span><span class="s2">&quot;ESRI Shapefile&quot;</span><span class="p">)</span>
+      <span class="n">dataset</span> <span class="o">=</span> <span class="n">shp_driver</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">shapefile</span><span class="p">)</span>
+
+      <span class="k">if</span> <span class="n">dataset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+          <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to open shapefile: </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">shapefile</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+          <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+      <span class="n">layer</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">GetLayer</span><span class="p">()</span>
+      <span class="n">layer_srs</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">GetSpatialRef</span><span class="p">()</span>
+
+      <span class="c1"># Reproject to 4326 if necessary</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">layer_srs</span><span class="o">.</span><span class="n">IsSame</span><span class="p">(</span><span class="n">target_srs</span><span class="p">):</span>
+          <span class="n">transform</span> <span class="o">=</span> <span class="n">osr</span><span class="o">.</span><span class="n">CoordinateTransformation</span><span class="p">(</span><span class="n">layer_srs</span><span class="p">,</span> <span class="n">target_srs</span><span class="p">)</span>
+
+      <span class="c1"># Merge all geometries into one</span>
+      <span class="n">roi_geom</span> <span class="o">=</span> <span class="n">ogr</span><span class="o">.</span><span class="n">Geometry</span><span class="p">(</span><span class="n">ogr</span><span class="o">.</span><span class="n">wkbMultiPolygon</span><span class="p">)</span>
+      <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">layer</span><span class="p">:</span>
+          <span class="n">geom</span> <span class="o">=</span> <span class="n">feature</span><span class="o">.</span><span class="n">GetGeometryRef</span><span class="p">()</span>
+          <span class="k">if</span> <span class="ow">not</span> <span class="n">layer_srs</span><span class="o">.</span><span class="n">IsSame</span><span class="p">(</span><span class="n">target_srs</span><span class="p">):</span>
+              <span class="n">geom</span><span class="o">.</span><span class="n">Transform</span><span class="p">(</span><span class="n">transform</span><span class="p">)</span>
+          <span class="n">roi_geom</span><span class="o">.</span><span class="n">AddGeometry</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">Clone</span><span class="p">())</span>
+      <span class="n">roi_geom</span> <span class="o">=</span> <span class="n">roi_geom</span><span class="o">.</span><span class="n">UnionCascaded</span><span class="p">()</span>
+      <span class="n">dataset</span> <span class="o">=</span> <span class="kc">None</span>
+
+  <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">point</span><span class="p">:</span>
+      <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">point</span>
+      <span class="n">point</span> <span class="o">=</span> <span class="n">ogr</span><span class="o">.</span><span class="n">Geometry</span><span class="p">(</span><span class="n">ogr</span><span class="o">.</span><span class="n">wkbPoint</span><span class="p">)</span>
+      <span class="n">point</span><span class="o">.</span><span class="n">AddPoint</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">)</span>
+      <span class="c1"># Buffer the point to create a small polygon (e.g., 0.01 degrees)</span>
+      <span class="n">buffer_distance</span> <span class="o">=</span> <span class="mf">0.0003</span>  <span class="c1"># degrees</span>
+      <span class="n">roi_geom</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">Buffer</span><span class="p">(</span><span class="n">buffer_distance</span><span class="p">)</span>
+
+  <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">extent</span><span class="p">:</span>
+      <span class="n">minx</span><span class="p">,</span> <span class="n">miny</span><span class="p">,</span> <span class="n">maxx</span><span class="p">,</span> <span class="n">maxy</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">extent</span>
+      <span class="n">ring</span> <span class="o">=</span> <span class="n">ogr</span><span class="o">.</span><span class="n">Geometry</span><span class="p">(</span><span class="n">ogr</span><span class="o">.</span><span class="n">wkbLinearRing</span><span class="p">)</span>
+      <span class="n">ring</span><span class="o">.</span><span class="n">AddPoint</span><span class="p">(</span><span class="n">minx</span><span class="p">,</span> <span class="n">miny</span><span class="p">)</span>
+      <span class="n">ring</span><span class="o">.</span><span class="n">AddPoint</span><span class="p">(</span><span class="n">minx</span><span class="p">,</span> <span class="n">maxy</span><span class="p">)</span>
+      <span class="n">ring</span><span class="o">.</span><span class="n">AddPoint</span><span class="p">(</span><span class="n">maxx</span><span class="p">,</span> <span class="n">maxy</span><span class="p">)</span>
+      <span class="n">ring</span><span class="o">.</span><span class="n">AddPoint</span><span class="p">(</span><span class="n">maxx</span><span class="p">,</span> <span class="n">miny</span><span class="p">)</span>
+      <span class="n">ring</span><span class="o">.</span><span class="n">AddPoint</span><span class="p">(</span><span class="n">minx</span><span class="p">,</span> <span class="n">miny</span><span class="p">)</span>
+      <span class="n">roi_geom</span> <span class="o">=</span> <span class="n">ogr</span><span class="o">.</span><span class="n">Geometry</span><span class="p">(</span><span class="n">ogr</span><span class="o">.</span><span class="n">wkbPolygon</span><span class="p">)</span>
+      <span class="n">roi_geom</span><span class="o">.</span><span class="n">AddGeometry</span><span class="p">(</span><span class="n">ring</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No valid ROI provided.&quot;</span><span class="p">)</span>
+      <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+  <span class="k">return</span> <span class="n">roi_geom</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+  <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Saswata Nandi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
