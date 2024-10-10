@@ -6,6 +6,12 @@ pynlcd can be used as a command-line tool or imported as a Python module.
 Command-line Usage
 ------------------
 
+To get help:
+
+.. code-block:: bash
+
+   pynlcd --help
+
 To download NLCD data for a specific region:
 
 .. code-block:: bash
