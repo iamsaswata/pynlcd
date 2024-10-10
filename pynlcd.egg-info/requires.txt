@@ -1,0 +1,5 @@
+python-dateutil>=2.9.0
+requests>=2.31.0
+pyproj>=3.3
+scipy>=1.13.0
+GDAL>=3.7.0
